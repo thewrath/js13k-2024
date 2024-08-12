@@ -1,4 +1,4 @@
 /** @type {import('vite').UserConfig} */
 export default {
-    base: '/littlejs-typescript-template/'
+    base: '/js13k-2024/'
 }

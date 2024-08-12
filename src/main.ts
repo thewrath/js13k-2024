@@ -28,7 +28,7 @@ function gameRender()
 
 function gameRenderPost()
 {
-  ls.drawTextScreen('Hello Typescript!', ls.mainCanvasSize.scale(.5), 80);
+  ls.drawTextScreen('Hello JS13K!', ls.mainCanvasSize.scale(.5), 80);
 }
 
 ls.engineInit(gameInit, gameUpdate, gameUpdatePost, gameRender, gameRenderPost, [tiles]);
