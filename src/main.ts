@@ -6,6 +6,8 @@ import tiles from './tiles.png';
 // import module
 import * as ls from 'littlejsengine';
 
+import Match from './match';
+
 ls.setShowSplashScreen(false);
 ls.setCanvasPixelated(false);
 
@@ -20,9 +22,9 @@ const sound_goodMove = new ls.Sound([.4, .2, 250, .04, , .04, , , 1, , , , , 3])
 const sound_badMove = new ls.Sound([, , 700, , , .07, , , , 3.7, , , , 3, , , .1]);
 const sound_fall = new ls.Sound([.2, , 1900, , , .01, , 1.4, , 91, , , , , , , , , , .7]);
 
-let level: number[];
+let match: Match;
 let levelFall: number[];
-let levelSize: ls.Vector2;
+let levelSize: ls.Vector2 = ls.vec2(6, 12);
 let fallTimer: ls.Timer;
 let dragStartPos: ls.Vector2 | undefined;
 let comboCount: number;
@@ -43,9 +45,6 @@ const tileColors =
 
 const tileTypeCount = tileColors.length;
 
-const getTile = (pos: ls.Vector2) => level[pos.x + pos.y * levelSize.x];
-const setTile = (pos: ls.Vector2, data: number) => level[pos.x + pos.y * levelSize.x] = data;
-
 function gameInit() {
   // setup canvas
   ls.mainCanvas.style.background = "black";
@@ -53,13 +52,7 @@ function gameInit() {
   // load high score
   bestScore = localStorage[highScoreKey] || 0;
 
-  // randomize level
-  level = [];
-  levelSize = ls.vec2(6, 12);
-  const pos = ls.vec2();
-  for (pos.x = levelSize.x; pos.x--;)
-    for (pos.y = levelSize.y; pos.y--;)
-      setTile(pos, ls.randInt(tileTypeCount));
+  match = new Match(levelSize, tileColors);
 
   // setup game
   ls.setCameraPos(levelSize.scale(.5).add(cameraOffset));
@@ -75,7 +68,7 @@ function gameUpdate() {
     if (fallTimer.elapsed()) {
       // add more blocks in the top
       for (let x = 0; x < levelSize.x; ++x)
-        setTile(ls.vec2(x, levelSize.y), ls.randInt(tileTypeCount));
+        match.setTile(ls.vec2(x, levelSize.y), ls.randInt(tileTypeCount));
     }
 
     // allow blocks to fall
@@ -86,12 +79,12 @@ function gameUpdate() {
       const pos = ls.vec2();
       for (pos.x = levelSize.x; pos.x--;)
         for (pos.y = 0; pos.y < levelSize.y; pos.y++) {
-          const data = getTile(pos);
+          const data = match.getTile(pos);
           const abovePos = pos.add(ls.vec2(0, 1));
-          const aboveData = getTile(abovePos);
+          const aboveData = match.getTile(abovePos);
           if (data == -1 && aboveData >= 0) {
-            setTile(pos, aboveData);
-            setTile(abovePos, -1);
+            match.setTile(pos, aboveData);
+            match.setTile(abovePos, -1);
             levelFall[pos.x + pos.y * levelSize.x] = keepFalling = 1;
           }
         }
@@ -124,12 +117,12 @@ function gameUpdate() {
         const dx = ls.abs(dragStartPos.x - mouseTilePos.x);
         const dy = ls.abs(dragStartPos.y - mouseTilePos.y);
         if (dx == 1 && dy == 0 || dx == 0 && dy == 1) {
-          const startTile = getTile(dragStartPos);
-          const endTile = getTile(mouseTilePos);
+          const startTile = match.getTile(dragStartPos);
+          const endTile = match.getTile(mouseTilePos);
           if (startTile >= 0 && endTile >= 0) {
             // swap tiles
-            setTile(mouseTilePos, startTile);
-            setTile(dragStartPos, endTile);
+            match.setTile(mouseTilePos, startTile);
+            match.setTile(dragStartPos, endTile);
 
             // try to clear matches
             clearMatches();
@@ -137,8 +130,8 @@ function gameUpdate() {
             // undo if no matches
             if (!fallTimer.isSet()) {
               sound_badMove.play();
-              setTile(mouseTilePos, endTile);
-              setTile(dragStartPos, startTile);
+              match.setTile(mouseTilePos, endTile);
+              match.setTile(dragStartPos, startTile);
             }
             else
               sound_goodMove.play();
@@ -171,7 +164,7 @@ function gameRender() {
   const pos = ls.vec2();
   for (pos.x = levelSize.x; pos.x--;)
     for (pos.y = levelSize.y; pos.y--;) {
-      const data = getTile(pos);
+      const data = match.getTile(pos);
       if (data == -1)
         continue;
 
@@ -189,7 +182,7 @@ function gameRender() {
         drawPos.y += 1 - fallTimer.getPercent();
 
       // draw background
-      ls.drawRect(drawPos, ls.vec2(.95), color);
+      ls.drawRect(drawPos, ls.vec2(.9), color);
     }
 
   if (dragingBlockColor)
@@ -214,7 +207,7 @@ function clearMatches() {
     let runCount = 0;
     let runData = 0;
     for (pos.x = levelSize.x; pos.x--;) {
-      const data = getTile(pos);
+      const data = match.getTile(pos);
       if (data >= 0 && data == runData) {
         for (let i = ++runCount; runCount >= minMatchCount && i--;)
           removeTiles[pos.x + i + pos.y * levelSize.x] = 1;
@@ -231,7 +224,7 @@ function clearMatches() {
     let runCount = 0;
     let runData = 0;
     for (pos.y = levelSize.y; pos.y--;) {
-      const data = getTile(pos);
+      const data = match.getTile(pos);
       if (data >= 0 && data == runData) {
         for (let i = ++runCount; runCount >= minMatchCount && i--;)
           removeTiles[pos.x + (pos.y + i) * levelSize.x] = 1;
@@ -250,8 +243,8 @@ function clearMatches() {
       if (removeTiles[pos.x + pos.y * levelSize.x]) {
         // remove tile
         ++removedCount;
-        const data = getTile(pos);
-        setTile(pos, -1);
+        const data = match.getTile(pos);
+        match.setTile(pos, -1);
 
         // spawn particles
         const color1 = tileColors[data];
