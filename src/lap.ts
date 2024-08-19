@@ -41,7 +41,8 @@ export default class Lap {
     }
 
     isMatchTime() {
-        return this.matchTimer.active();
+        return true;
+       //return this.matchTimer.active();
     }
 
     isPauseTime() {
@@ -54,10 +55,10 @@ export default class Lap {
             return;
         }
 
-        ls.drawText(`Bet timer:`, ls.cameraPos.add(ls.vec2(-1, -6.5)), .9, ls.hsl(), .1);
-        ls.drawText(`${Math.abs(this.betTimer.get()).toLocaleString(undefined, { maximumFractionDigits: 0 })}`, ls.cameraPos.add(ls.vec2(2.7, -6.5)), .9, ls.hsl(), .1);
+        // ls.drawText(`Bet timer:`, ls.cameraPos.add(ls.vec2(-1, -6.5)), .9, ls.hsl(), .1);
+        // ls.drawText(`${Math.abs(this.betTimer.get()).toLocaleString(undefined, { maximumFractionDigits: 0 })}`, ls.cameraPos.add(ls.vec2(2.7, -6.5)), .9, ls.hsl(), .1);
 
-        ls.drawText(`Match timer:`, ls.cameraPos.add(ls.vec2(-.5, -7.5)), .9, ls.hsl(), .1);
-        ls.drawText(`${Math.abs(this.matchTimer.get()).toLocaleString(undefined, { maximumFractionDigits: 0 })}`, ls.cameraPos.add(ls.vec2(2.7, -7.5)), .9, ls.hsl(), .1);
+        // ls.drawText(`Match timer:`, ls.cameraPos.add(ls.vec2(-.5, -7.5)), .9, ls.hsl(), .1);
+        // ls.drawText(`${Math.abs(this.matchTimer.get()).toLocaleString(undefined, { maximumFractionDigits: 0 })}`, ls.cameraPos.add(ls.vec2(2.7, -7.5)), .9, ls.hsl(), .1);
     }
 }

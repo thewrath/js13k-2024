@@ -27,7 +27,7 @@ let match: Match;
 let lap: Lap;
 
 let levelFall: number[];
-let levelSize: ls.Vector2 = ls.vec2(6, 12);
+let levelSize: ls.Vector2 = ls.vec2(5, 10);
 let fallTimer: ls.Timer;
 let dragStartPos: ls.Vector2 | undefined;
 let comboCount: number;
@@ -36,20 +36,6 @@ let bestScore: number;
 
 let season: number;
 
-// tiles
-const tileColors =
-  [
-    ls.rgb(1, 0, 0),
-    ls.rgb(1, 1, 1),
-    ls.rgb(1, 1, 0),
-    ls.rgb(0, 1, 0),
-    ls.rgb(0, .6, 1),
-    ls.rgb(.6, 0, 1),
-    ls.rgb(.5, .5, .5),
-  ];
-
-const tileTypeCount = tileColors.length;
-
 function gameInit() {
   // setup canvas
   ls.mainCanvas.style.background = "black";
@@ -57,7 +43,7 @@ function gameInit() {
   // load high score
   bestScore = localStorage[highScoreKey] || 0;
 
-  match = new Match(levelSize, tileColors);
+  match = new Match(levelSize);
   lap = new Lap(13, 10);
 
   // setup game
@@ -73,23 +59,16 @@ function gameInit() {
 function gameUpdate() {
   lap.update();
 
-  // Bet
-  if (lap.isBetTime()) {
-    // Todo handle bet :
-    // - event when bet time start // "time to think !"
-    // - event when match time start // "time to match !"
-    // - input to select bet
-    return;
-  }
-
   // Match
   if (lap.isMatchTime()) {
     if (fallTimer.isSet()) {
       // update falling tiles
       if (fallTimer.elapsed()) {
         // add more blocks in the top
-        for (let x = 0; x < levelSize.x; ++x)
-          match.setTile(ls.vec2(x, levelSize.y), ls.randInt(tileTypeCount));
+        for (let x = 0; x < levelSize.x; ++x) {
+          const cell = match.getNextCell();
+          cell && match.setCell(ls.vec2(x, levelSize.y), cell);
+        }
       }
 
       // allow blocks to fall
@@ -100,12 +79,12 @@ function gameUpdate() {
         const pos = ls.vec2();
         for (pos.x = levelSize.x; pos.x--;)
           for (pos.y = 0; pos.y < levelSize.y; pos.y++) {
-            const data = match.getTile(pos);
+            const cell = match.getCell(pos);
             const abovePos = pos.add(ls.vec2(0, 1));
-            const aboveData = match.getTile(abovePos);
-            if (data == -1 && aboveData >= 0) {
-              match.setTile(pos, aboveData);
-              match.setTile(abovePos, -1);
+            const aboveCell = match.getCell(abovePos);
+            if (cell == undefined && aboveCell != undefined) {
+              match.setCell(pos, aboveCell);
+              match.setCell(abovePos, undefined);
               levelFall[pos.x + pos.y * levelSize.x] = keepFalling = 1;
             }
           }
@@ -138,12 +117,12 @@ function gameUpdate() {
           const dx = ls.abs(dragStartPos.x - mouseTilePos.x);
           const dy = ls.abs(dragStartPos.y - mouseTilePos.y);
           if (dx == 1 && dy == 0 || dx == 0 && dy == 1) {
-            const startTile = match.getTile(dragStartPos);
-            const endTile = match.getTile(mouseTilePos);
-            if (startTile >= 0 && endTile >= 0) {
+            const startCell = match.getCell(dragStartPos);
+            const endCell = match.getCell(mouseTilePos);
+            if (startCell != undefined && endCell != undefined) {
               // swap tiles
-              match.setTile(mouseTilePos, startTile);
-              match.setTile(dragStartPos, endTile);
+              match.setCell(mouseTilePos, startCell);
+              match.setCell(dragStartPos, endCell);
 
               // try to clear matches
               clearMatches();
@@ -151,11 +130,12 @@ function gameUpdate() {
               // undo if no matches
               if (!fallTimer.isSet()) {
                 sound_badMove.play();
-                match.setTile(mouseTilePos, endTile);
-                match.setTile(dragStartPos, startTile);
+                match.setCell(mouseTilePos, endCell);
+                match.setCell(dragStartPos, startCell);
               }
-              else
+              else {
                 sound_goodMove.play();
+              }
               dragStartPos = undefined;
             }
           }
@@ -186,11 +166,11 @@ function gameRender() {
   const pos = ls.vec2();
   for (pos.x = levelSize.x; pos.x--;)
     for (pos.y = levelSize.y; pos.y--;) {
-      const data = match.getTile(pos);
-      if (data == -1)
+      const cell = match.getCell(pos);
+      if (cell == undefined)
         continue;
 
-      const color = tileColors[data];
+      const color = match.ArcaneColors.get(cell.arcane);
 
       // highlight drag start
       const drawPos = pos.add(ls.vec2(0.5));
@@ -206,9 +186,10 @@ function gameRender() {
 
       // draw background
       !isDragged && ls.drawTile(drawPos, ls.vec2(.9), ls.tile(season), color);
+      !isDragged && ls.drawText((cell.index + 1).toString(), drawPos, .5, ls.rgb(1));
     }
 
-  if (dragingBlockColor)
+  if (dragingBlockColor) 
     ls.drawTile(ls.mousePos, ls.vec2(1), ls.tile(season), dragingBlockColor);
 
   // draw a grey square at top to cover up incomming tiles
@@ -240,11 +221,12 @@ function clearMatches() {
       if (removeTiles[pos.x + pos.y * levelSize.x]) {
         // remove tile
         ++removedCount;
-        const data = match.getTile(pos);
-        match.setTile(pos, -1);
+        const cell = match.getCell(pos);
+        if (cell == undefined) continue;
+        match.setCell(pos, undefined, true);
 
         // spawn particles
-        const color1 = tileColors[data];
+        const color1 = match.ArcaneColors.get(cell.arcane);
         new ls.ParticleEmitter(
           pos.add(ls.vec2(.5)), 0,  // pos, angle
           .5, .1, 200, ls.PI,       // emitSize, emitTime, emitRate, emiteCone
