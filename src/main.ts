@@ -186,6 +186,7 @@ function gameRender() {
 
       // draw background
       !isDragged && ls.drawTile(drawPos, ls.vec2(.9), ls.tile(season), color);
+      !isDragged && ls.drawTile(drawPos, ls.vec2(.5), ls.tile(22, 8), match.ArcaneColors.get(1));
       // !isDragged && ls.drawText((cell.index + 1).toString(), drawPos, .5, ls.rgb(1));
     }
 

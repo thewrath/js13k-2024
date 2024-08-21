@@ -16,7 +16,7 @@ enum Arcane {
 export default class Match {
 
     private readonly minMatchCount = 3;
-    private readonly nextCells: Cell[];
+    private nextCells: Cell[];
 
     private level: Cell[] = [];
     private levelSize: ls.Vector2;
@@ -33,6 +33,7 @@ export default class Match {
         this.levelSize = levelSize;
 
         this.nextCells = this.generateCells();
+        this.shuffleNextCells();
 
         // randomize level
         const pos = ls.vec2();
@@ -49,14 +50,18 @@ export default class Match {
             Arcane.Air
         ];
 
-        const cells: Cell[] = [];
-        for (const arcane of arcanes.concat(arcanes, Arcane.Major)) {
-            for (let i = 14; i--;) {
-                cells.push({ arcane: arcane, index: i });
-            }
-        }
+        // Todo generate major arcanes
 
-        return cells
+        const cells: Cell[] = [];
+        for (let i = 0; i < arcanes.length * 2; i++)
+            for (let i = 14; i--;)
+                cells.push({ arcane: arcanes[i % arcanes.length], index: i });
+
+        return cells;
+    }
+
+    private shuffleNextCells() {
+        this.nextCells = this.nextCells
             .map(value => ({ value, sort: Math.random() }))
             .sort((a, b) => a.sort - b.sort)
             .map(({ value }) => value)
@@ -64,6 +69,8 @@ export default class Match {
     }
 
     getNextCell(): Cell | undefined {
+        // TODO perf
+        this.shuffleNextCells();
         return this.nextCells.shift();
     }
 
