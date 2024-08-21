@@ -10,12 +10,11 @@ import Match from './match';
 import Lap from './lap';
 
 ls.setShowSplashScreen(false);
-ls.setCanvasPixelated(false);
 ls.setCanvasPixelated(true);
+ls.setCanvasFixedSize(ls.vec2(720, 1280));
+ls.setCameraScale(16*7);
 
 const fallTime = .2;
-const cameraOffset = ls.vec2(0, -.5);
-const backgroundColor = ls.hsl(0, 0, 0);
 const highScoreKey = 'puzzleBestScore';
 
 // sound effects
@@ -27,7 +26,7 @@ let match: Match;
 let lap: Lap;
 
 let levelFall: number[];
-let levelSize: ls.Vector2 = ls.vec2(5, 10);
+let levelSize: ls.Vector2 = ls.vec2(6, 10);
 let fallTimer: ls.Timer;
 let dragStartPos: ls.Vector2 | undefined;
 let comboCount: number;
@@ -47,13 +46,13 @@ function gameInit() {
   lap = new Lap(13, 10);
 
   // setup game
-  ls.setCameraPos(levelSize.scale(.5).add(cameraOffset));
-  ls.setCameraScale(64);
+  ls.setCameraPos(levelSize.scale(.5));
+  // ls.setCameraScale(64);
   ls.setGravity(-.004);
   fallTimer = new ls.Timer;
   comboCount = score = 0;
 
-  season = ls.randInt(0, 4);
+  season = 0;
 }
 
 function gameUpdate() {
@@ -66,6 +65,7 @@ function gameUpdate() {
       if (fallTimer.elapsed()) {
         // add more blocks in the top
         for (let x = 0; x < levelSize.x; ++x) {
+          if (match.getCell(ls.vec2(x, levelSize.y)) != undefined) continue;
           const cell = match.getNextCell();
           cell && match.setCell(ls.vec2(x, levelSize.y), cell);
         }
@@ -159,7 +159,7 @@ function gameUpdatePost() {
 
 function gameRender() {
   // draw a black square for the background
-  ls.drawRect(ls.cameraPos.subtract(cameraOffset), levelSize, ls.hsl(0, 0, 0));
+  ls.drawRect(ls.cameraPos, levelSize, ls.hsl(0, 0, 0));
 
   // draw the blocks
   let dragingBlockColor: ls.Color | undefined;
@@ -186,14 +186,14 @@ function gameRender() {
 
       // draw background
       !isDragged && ls.drawTile(drawPos, ls.vec2(.9), ls.tile(season), color);
-      !isDragged && ls.drawText((cell.index + 1).toString(), drawPos, .5, ls.rgb(1));
+      // !isDragged && ls.drawText((cell.index + 1).toString(), drawPos, .5, ls.rgb(1));
     }
 
-  if (dragingBlockColor) 
+  if (dragingBlockColor)
     ls.drawTile(ls.mousePos, ls.vec2(1), ls.tile(season), dragingBlockColor);
 
   // draw a grey square at top to cover up incomming tiles
-  ls.drawRect(ls.cameraPos.subtract(cameraOffset).add(ls.vec2(0, levelSize.y)), levelSize, backgroundColor);
+  ls.drawRect(ls.cameraPos.add(ls.vec2(0, levelSize.y)), levelSize, ls.rgb(0, 0, 0));
 }
 
 function gameRenderPost() {
