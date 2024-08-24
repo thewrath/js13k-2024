@@ -5,7 +5,7 @@ type Cell = {
     index: number
 }
 
-enum Arcane {
+export enum Arcane {
     Fire,
     Water,
     Earth,
@@ -27,10 +27,10 @@ export default class Match {
     private levelSize: ls.Vector2;
 
     public readonly ArcaneColors: Map<Arcane, ls.Color> = new Map([
-        [Arcane.Water, minorColor.lerp(ls.rgb(1), 0.8)],
+        [Arcane.Water, minorColor.lerp(ls.rgb(1), 0.9)],
         [Arcane.Fire, minorColor.lerp(ls.rgb(1), 0.6)],
-        [Arcane.Air, minorColor.lerp(ls.rgb(1), 0.4)],
-        [Arcane.Earth, minorColor.lerp(ls.rgb(1), 0.2)],
+        [Arcane.Air, minorColor.lerp(ls.rgb(1), 0.3)],
+        [Arcane.Earth, minorColor.lerp(ls.rgb(1), 0.0)],
         [Arcane.Major, majorColor]
     ]);
 
@@ -63,7 +63,7 @@ export default class Match {
         const cells: Cell[] = [];
         for (let i = 0; i < arcanes.length * 2; i++)
             for (let i = 14; i--;)
-                cells.push({ arcane: arcanes[i % arcanes.length], index: i % 3});
+                cells.push({ arcane: arcanes[i % arcanes.length], index: i % 7});
 
         return cells;
     }
@@ -103,14 +103,10 @@ export default class Match {
         let removeTiles: number[] = [];
 
         const colorMatch = (cellA: Cell, cellB: Cell, runCount: number): boolean => {
-            return cellA.arcane == Arcane.Major && cellA.arcane == cellB.arcane;
+            return cellA.arcane == cellB.arcane;
         };
 
-        const serieMatch = (cellA: Cell, cellB: Cell, runCount: number): boolean => {
-            return cellA.index + runCount == cellB.index;
-        };
-
-        for (const match of [serieMatch, colorMatch]) {
+        for (const match of [colorMatch]) {
             for (let y = this.levelSize.y; y--;) {
                 removeTiles = removeTiles.concat(this.getHorizontalMatch(y, match))
             }
