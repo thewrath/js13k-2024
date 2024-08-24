@@ -6,13 +6,15 @@ import tiles from './tiles.png';
 // import module
 import * as ls from 'littlejsengine';
 
-import Match, { Arcane } from './match';
+import Match, { Arcane, Cell } from './match';
 import Lap from './lap';
+import { BigCellHand, bigCells } from './bigCell';
 
+ls.setShowWatermark(false);
 ls.setShowSplashScreen(false);
 ls.setCanvasPixelated(true);
 ls.setCanvasFixedSize(ls.vec2(720, 1280));
-ls.setCameraScale(16*7);
+ls.setCameraScale(16 * 7);
 
 const fallTime = .2;
 const highScoreKey = 'puzzleBestScore';
@@ -24,6 +26,7 @@ const sound_fall = new ls.Sound([.2, , 1900, , , .01, , 1.4, , 91, , , , , , , ,
 
 let match: Match;
 let lap: Lap;
+let hand: BigCellHand;
 
 let levelFall: number[];
 let levelSize: ls.Vector2 = ls.vec2(6, 10);
@@ -44,6 +47,7 @@ function gameInit() {
 
   match = new Match(levelSize);
   lap = new Lap(13, 10);
+  hand = new BigCellHand();
 
   // setup game
   ls.setCameraPos(levelSize.scale(.5));
@@ -162,7 +166,7 @@ function gameRender() {
   ls.drawRect(ls.cameraPos, levelSize, ls.hsl(0, 0, 0));
 
   // draw the blocks
-  let dragingBlockColor: ls.Color | undefined;
+  let dragingCell: Cell | undefined;
   const pos = ls.vec2();
   for (pos.x = levelSize.x; pos.x--;)
     for (pos.y = levelSize.y; pos.y--;) {
@@ -170,13 +174,11 @@ function gameRender() {
       if (cell == undefined)
         continue;
 
-      const color = match.ArcaneColors.get(cell.arcane);
-
       // highlight drag start
       const drawPos = pos.add(ls.vec2(0.5));
       let isDragged = false;
       if (dragStartPos && pos.x == dragStartPos.x && pos.y == dragStartPos.y) {
-        dragingBlockColor = color;
+        dragingCell = cell;
         isDragged = true;
       }
 
@@ -185,20 +187,29 @@ function gameRender() {
         drawPos.y += 1 - fallTimer.getPercent();
 
       // draw background
-      !isDragged && ls.drawTile(drawPos, ls.vec2(.9), ls.tile(season), color);
-      // !isDragged && ls.drawTile(drawPos, ls.vec2(.5), ls.tile(22, 8), match.ArcaneColors.get(1));
-      !isDragged && cell.arcane == Arcane.Major && ls.drawText((cell.index + 1).toString(), drawPos, .5, ls.rgb(1));
+      if (!isDragged) {
+        _drawCell(cell, drawPos);
+      }
     }
 
-  if (dragingBlockColor)
-    ls.drawTile(ls.mousePos, ls.vec2(1), ls.tile(season), dragingBlockColor);
+  if (dragingCell) {
+    _drawCell(dragingCell, ls.mousePos);
+  }
 
   // draw a grey square at top to cover up incomming tiles
   ls.drawRect(ls.cameraPos.add(ls.vec2(0, levelSize.y)), levelSize, ls.rgb(0, 0, 0));
 }
 
+function _drawCell(cell: Cell, pos: ls.Vector2) {
+  const color = match.ArcaneColors.get(cell.arcane);
+  ls.drawTile(pos, ls.vec2(1), ls.tile(season), color);
+
+  cell.arcane == Arcane.Major && ls.drawTile(pos, ls.vec2(.5), ls.tile(2 + (cell.index == 6 ? 8 : cell.index), 8), color?.lerp(ls.rgb(0, 0, 0), 0.5));
+}
+
 function gameRenderPost() {
   lap.drawLapHud();
+  hand.draw();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -207,15 +218,19 @@ function clearMatches() {
   let removeTiles = match.getMatch();
 
   // remove tiles all at once like this to handle shapes like L or T
+  let removedArcanes: { [key: string]: Cell[] } = {};
   let removedCount = 0;
   let pos = ls.vec2(0);
-  for (pos.x = levelSize.x; pos.x--;)
+  for (pos.x = levelSize.x; pos.x--;) {
     for (pos.y = levelSize.y; pos.y--;) {
       if (removeTiles[pos.x + pos.y * levelSize.x]) {
         // remove tile
         ++removedCount;
         const cell = match.getCell(pos);
         if (cell == undefined) continue;
+
+        removedArcanes[cell.arcane] = [...(removedArcanes[cell.arcane] ?? []), cell];
+
         match.setCell(pos, undefined, true);
 
         // spawn particles
@@ -232,6 +247,14 @@ function clearMatches() {
         );
       }
     }
+  }
+
+  const sum = (removedArcanes[Arcane.Major] ?? []).reduce((acc, c) => acc + (c.index+1), 0);
+  let bigCell = bigCells[sum];
+
+  if (bigCell) {
+    hand.add(bigCell);
+  }
 
   if (removedCount) {
     score += ++comboCount * removedCount;

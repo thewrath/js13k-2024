@@ -1,6 +1,6 @@
 import * as ls from 'littlejsengine';
 
-type Cell = {
+export type Cell = {
     arcane: Arcane
     index: number
 }
@@ -40,7 +40,10 @@ export default class Match {
         this.nextCells = this.generateCells();
         this.shuffleNextCells();
 
+        // TODO remove
         console.log(JSON.stringify([...this.ArcaneColors]));
+
+        console.log(this.nextCells.filter(c => c.arcane == Arcane.Major))
 
         // randomize level
         const pos = ls.vec2();
@@ -62,8 +65,8 @@ export default class Match {
 
         const cells: Cell[] = [];
         for (let i = 0; i < arcanes.length * 2; i++)
-            for (let i = 14; i--;)
-                cells.push({ arcane: arcanes[i % arcanes.length], index: i % 7});
+            for (let j = 14; j--;)
+                cells.push({ arcane: arcanes[i % arcanes.length], index: j % 7});
 
         return cells;
     }
