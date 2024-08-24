@@ -186,8 +186,8 @@ function gameRender() {
 
       // draw background
       !isDragged && ls.drawTile(drawPos, ls.vec2(.9), ls.tile(season), color);
-      !isDragged && ls.drawTile(drawPos, ls.vec2(.5), ls.tile(22, 8), match.ArcaneColors.get(1));
-      // !isDragged && ls.drawText((cell.index + 1).toString(), drawPos, .5, ls.rgb(1));
+      // !isDragged && ls.drawTile(drawPos, ls.vec2(.5), ls.tile(22, 8), match.ArcaneColors.get(1));
+      !isDragged && ls.drawText((cell.index + 1).toString(), drawPos, .5, ls.rgb(1));
     }
 
   if (dragingBlockColor)
@@ -204,15 +204,7 @@ function gameRenderPost() {
 ///////////////////////////////////////////////////////////////////////////////
 // find and remove all runs of 3 or higher
 function clearMatches() {
-  let removeTiles: number[] = [];
-
-  for (let y = levelSize.y; y--;) {
-    removeTiles = removeTiles.concat(match.getHorizontalMatch(y))
-  }
-
-  for (let x = levelSize.x; x--;) {
-    removeTiles = removeTiles.concat(match.getVerticalMatch(x))
-  }
+  let removeTiles = match.getMatch();
 
   // remove tiles all at once like this to handle shapes like L or T
   let removedCount = 0;

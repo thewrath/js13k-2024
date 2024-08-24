@@ -13,6 +13,11 @@ enum Arcane {
     Major
 }
 
+type CellMatcher = (cellA: Cell, cellB: Cell, runCount: number) => boolean;
+
+const minorColor = ls.randColor();
+const majorColor = ls.randColor();
+
 export default class Match {
 
     private readonly minMatchCount = 3;
@@ -22,11 +27,11 @@ export default class Match {
     private levelSize: ls.Vector2;
 
     public readonly ArcaneColors: Map<Arcane, ls.Color> = new Map([
-        [Arcane.Water, ls.randColor()],
-        [Arcane.Fire, ls.randColor()],
-        [Arcane.Air, ls.randColor()],
-        [Arcane.Major, ls.randColor()],
-        [Arcane.Earth, ls.randColor()]
+        [Arcane.Water, minorColor.lerp(ls.rgb(1), 0.8)],
+        [Arcane.Fire, minorColor.lerp(ls.rgb(1), 0.6)],
+        [Arcane.Air, minorColor.lerp(ls.rgb(1), 0.4)],
+        [Arcane.Earth, minorColor.lerp(ls.rgb(1), 0.2)],
+        [Arcane.Major, majorColor]
     ]);
 
     constructor(levelSize: ls.Vector2) {
@@ -34,6 +39,8 @@ export default class Match {
 
         this.nextCells = this.generateCells();
         this.shuffleNextCells();
+
+        console.log(JSON.stringify([...this.ArcaneColors]));
 
         // randomize level
         const pos = ls.vec2();
@@ -47,7 +54,8 @@ export default class Match {
             Arcane.Fire,
             Arcane.Water,
             Arcane.Earth,
-            Arcane.Air
+            Arcane.Air,
+            Arcane.Major
         ];
 
         // Todo generate major arcanes
@@ -55,7 +63,7 @@ export default class Match {
         const cells: Cell[] = [];
         for (let i = 0; i < arcanes.length * 2; i++)
             for (let i = 14; i--;)
-                cells.push({ arcane: arcanes[i % arcanes.length], index: i });
+                cells.push({ arcane: arcanes[i % arcanes.length], index: i % 3});
 
         return cells;
     }
@@ -91,19 +99,43 @@ export default class Match {
         }
     }
 
-    getVerticalMatch(x: number) {
+    getMatch() {
+        let removeTiles: number[] = [];
+
+        const colorMatch = (cellA: Cell, cellB: Cell, runCount: number): boolean => {
+            return cellA.arcane == Arcane.Major && cellA.arcane == cellB.arcane;
+        };
+
+        const serieMatch = (cellA: Cell, cellB: Cell, runCount: number): boolean => {
+            return cellA.index + runCount == cellB.index;
+        };
+
+        for (const match of [serieMatch, colorMatch]) {
+            for (let y = this.levelSize.y; y--;) {
+                removeTiles = removeTiles.concat(this.getHorizontalMatch(y, match))
+            }
+
+            for (let x = this.levelSize.x; x--;) {
+                removeTiles = removeTiles.concat(this.getVerticalMatch(x, match))
+            }
+        }
+
+        return removeTiles;
+    }
+
+    private getVerticalMatch(x: number, cellMatcher: CellMatcher) {
         const removeTiles = [];
         let runCount = 0;
-        let runArcane: Arcane | undefined = undefined;
+        let runCell: Cell | undefined;
         let pos = ls.vec2(x, 0);
         for (pos.y = this.levelSize.y; pos.y--;) {
             const cell = this.getCell(pos);
-            if (cell != undefined && cell.arcane == runArcane) {
+            if (cell && runCell && cellMatcher(runCell, cell, runCount)) {
                 for (let i = ++runCount; runCount >= this.minMatchCount && i--;)
                     removeTiles[pos.x + (pos.y + i) * this.levelSize.x] = 1;
             }
             else {
-                runArcane = cell?.arcane;
+                runCell = cell;
                 runCount = 1;
             }
         }
@@ -111,19 +143,19 @@ export default class Match {
         return removeTiles;
     }
 
-    getHorizontalMatch(y: number) {
+    private getHorizontalMatch(y: number, cellMatcher: CellMatcher) {
         const removeTiles = [];
         let runCount = 0;
-        let runArcane = 0;
+        let runCell: Cell | undefined;
         let pos = ls.vec2(0, y);
         for (pos.x = this.levelSize.x; pos.x--;) {
             const cell = this.getCell(pos);
-            if (cell != undefined && cell.arcane == runArcane) {
+            if (cell && runCell && cellMatcher(runCell, cell, runCount + 1)) {
                 for (let i = ++runCount; runCount >= this.minMatchCount && i--;)
                     removeTiles[pos.x + i + pos.y * this.levelSize.x] = 1;
             }
             else {
-                runArcane = cell?.arcane;
+                runCell = cell;
                 runCount = 1;
             }
         }
