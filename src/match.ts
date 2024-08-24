@@ -102,7 +102,7 @@ export default class Match {
     getMatch() {
         let removeTiles: number[] = [];
 
-        const colorMatch = (cellA: Cell, cellB: Cell, runCount: number): boolean => {
+        const colorMatch = (cellA: Cell, cellB: Cell, _runCount: number): boolean => {
             return cellA.arcane == cellB.arcane;
         };
 
