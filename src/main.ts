@@ -249,20 +249,25 @@ function clearMatches() {
     }
   }
 
-  const sum = (removedArcanes[Arcane.Major] ?? []).reduce((acc, c) => acc + (c.index+1), 0);
-  let bigCell = bigCells[sum];
-
-  if (bigCell) {
-    hand.add(bigCell);
-  }
-
-  if (removedCount) {
-    score += ++comboCount * removedCount;
+  if (Object.keys(removedArcanes).length > 0) {
     fallTimer.set();
     levelFall = [];
+
+    if (!lap.isPauseTime()) {
+      score += ++comboCount * removedCount;
+
+      const sum = (removedArcanes[Arcane.Major] ?? []).reduce((acc, c) => acc + (c.index + 1), 0);
+      let bigCell = bigCells[sum];
+
+      if (bigCell) {
+        hand.add(bigCell);
+      }
+
+    } else {
+      comboCount = 0;
+
+    }
   }
-  else
-    comboCount = 0;
 }
 
 ls.engineInit(gameInit, gameUpdate, gameUpdatePost, gameRender, gameRenderPost, [tiles]);
