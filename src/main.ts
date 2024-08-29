@@ -6,7 +6,7 @@ import tiles from './tiles.png';
 // import module
 import * as ls from 'littlejsengine';
 
-import Match, { Arcane, Cell } from './match';
+import Match, { Arcane, Cell, majorColorGradient } from './match';
 import Lap from './lap';
 import { BigCellHand, bigCells } from './bigCell';
 
@@ -15,6 +15,7 @@ ls.setShowSplashScreen(false);
 ls.setCanvasPixelated(true);
 ls.setCanvasFixedSize(ls.vec2(720, 1280));
 ls.setCameraScale(16 * 7);
+ls.setGlEnable(true);
 
 const fallTime = .2;
 const highScoreKey = 'puzzleBestScore';
@@ -198,6 +199,12 @@ function gameRender() {
 
   // draw a grey square at top to cover up incomming tiles
   ls.drawRect(ls.cameraPos.add(ls.vec2(0, levelSize.y)), levelSize, ls.rgb(0, 0, 0));
+  _drawPixelArt(ls.mousePos, majorColorGradient);
+}
+
+function _drawPixelArt(position: ls.Vector2, colors: ls.Color[]) {
+  ls.drawTile(position, ls.vec2(2), ls.tile(season), colors[0]);
+  ls.drawText('J', position, 1, colors[0]);
 }
 
 function _drawCell(cell: Cell, pos: ls.Vector2) {

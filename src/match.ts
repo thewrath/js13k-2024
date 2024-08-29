@@ -1,4 +1,5 @@
 import * as ls from 'littlejsengine';
+import { buildColorGradient } from './utils';
 
 export type Cell = {
     arcane: Arcane
@@ -15,8 +16,8 @@ export enum Arcane {
 
 type CellMatcher = (cellA: Cell, cellB: Cell, runCount: number) => boolean;
 
-const minorColor = ls.randColor();
-const majorColor = ls.randColor();
+export const minorColorGradient = buildColorGradient(ls.randColor(), ls.rgb(1), 4);
+export const majorColorGradient = buildColorGradient(ls.randColor(), ls.rgb(1), 4);
 
 export default class Match {
 
@@ -27,15 +28,17 @@ export default class Match {
     private levelSize: ls.Vector2;
 
     public readonly ArcaneColors: Map<Arcane, ls.Color> = new Map([
-        [Arcane.Water, minorColor.lerp(ls.rgb(1), 0.9)],
-        [Arcane.Fire, minorColor.lerp(ls.rgb(1), 0.6)],
-        [Arcane.Air, minorColor.lerp(ls.rgb(1), 0.3)],
-        [Arcane.Earth, minorColor.lerp(ls.rgb(1), 0.0)],
-        [Arcane.Major, majorColor]
+        [Arcane.Water, minorColorGradient[0]],
+        [Arcane.Fire, minorColorGradient[1]],
+        [Arcane.Air, minorColorGradient[2]],
+        [Arcane.Earth, minorColorGradient[3]],
+        [Arcane.Major, majorColorGradient[0]]
     ]);
 
     constructor(levelSize: ls.Vector2) {
         this.levelSize = levelSize;
+
+        console.log(minorColorGradient);
 
         this.nextCells = this.generateCells();
         this.shuffleNextCells();
